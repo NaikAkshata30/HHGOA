@@ -5,12 +5,12 @@ import {
   DotGrid,
   Grain,
   PalmLeaf,
-  QRPlaceholder,
   TravelStamp,
   WaveLines,
   WaveRule,
   buildBuilderId,
 } from '../frame/decorations.jsx'
+import BuilderQR from './BuilderQR.jsx'
 
 // Fixed render size of the exportable Builder ID card (html2canvas target).
 export const BUILDER_CARD = {
@@ -28,7 +28,7 @@ export const BUILDER_CARD = {
   photoRadius: 28,
   matRadius: 36,
   stampSize: 250,
-  qrSize: 200,
+  qrSize: 220,
   patternOpacity: 0.5,
 }
 
@@ -111,7 +111,6 @@ const BuilderCardCanvas = forwardRef(function BuilderCardCanvas(
   const displayTitle = (title || 'Builder').trim() || 'Builder'
 
   const builderId = useMemo(() => buildBuilderId(displayName, displayStack), [displayName, displayStack])
-  const qrSeed = useMemo(() => Number.parseInt(builderId.slice(3), 10) || 7, [builderId])
 
   const card = BUILDER_CARD
   const ariaLabel = `Goa Explorer Builder ID card${
@@ -413,7 +412,7 @@ const BuilderCardCanvas = forwardRef(function BuilderCardCanvas(
               boxShadow: '0 18px 36px rgba(29, 38, 33, 0.12)',
             }}
           >
-            <QRPlaceholder size={card.qrSize} seed={qrSeed} color={C.forest} />
+            <BuilderQR size={card.qrSize} builderId={builderId} />
             <p
               className="mt-4 font-semibold uppercase"
               style={{ fontFamily: MONO, fontSize: 15, letterSpacing: '0.24em', color: C.stone }}

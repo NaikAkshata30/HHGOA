@@ -53,13 +53,19 @@ The production build is output to `dist/`.
 
 ### Environment variables
 
-Optional — appends your live URL to shared tweets:
+Optional — appends your live URL to shared tweets and encodes it into the Builder ID QR:
 
 ```bash
-VITE_APP_URL=https://your-domain.com
+VITE_SITE_URL=https://your-domain.com   # canonical public URL (QR + share)
+VITE_APP_URL=https://your-domain.com    # legacy alias for the share link
 ```
 
-Create a `.env.local` file to keep it local to development.
+Create a `.env.local` file to keep it local to development (see `.env.example`).
+
+> If `VITE_SITE_URL` is unset, the Builder ID QR falls back to the page's
+> current origin. That is correct on the deployed site but wrong on localhost
+> (a phone can't reach your dev machine). Set `VITE_SITE_URL` to your deployed
+> URL so every QR points at the real public site.
 
 ## Deployment
 

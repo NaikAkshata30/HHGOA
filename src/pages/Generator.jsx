@@ -24,7 +24,7 @@ import FrameGenerator from '../components/frame/FrameGenerator.jsx'
 import BuilderCard from '../components/builderCard/BuilderCard.jsx'
 import useImageUpload from '../hooks/useImageUpload.js'
 import { useToast } from '../components/toast/ToastProvider.jsx'
-import { exportAll, exportBuilderCard, exportFrame } from '../utils/exportUtils.js'
+import { exportAll, exportBuilderCard, exportFrame } from '../utils/exportImage.js'
 import { BUILDER_TITLES, DEFAULT_BUILDER_TITLE } from '../data/builderTitles.js'
 
 const STEPS = [
@@ -368,10 +368,16 @@ export default function Generator() {
             <div>
               <h3 className="font-editorial text-lg font-bold text-coal">Share to X</h3>
               <p className="mt-1 max-w-md text-sm leading-relaxed text-stone">
-                Spread the word with a prefilled tweet — no image upload, opens in a new tab.
+                Share your Builder ID and Profile Frame together — on phones the native
+                share sheet carries both images plus a prefilled tweet.
               </p>
             </div>
-            <ShareButton className="w-full sm:w-auto" />
+            <ShareButton
+              className="w-full sm:w-auto"
+              frameRef={frameRef}
+              builderRef={builderRef}
+              disabled={!canExport}
+            />
           </div>
 
           {exportError && (

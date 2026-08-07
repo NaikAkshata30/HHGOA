@@ -378,7 +378,7 @@ const FrameCanvas = forwardRef(function FrameCanvas(
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0"
-            style={{ borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px rgba(29, 38, 33, 0.12)' }}
+            style={{ borderRadius: '50%', border: '1.5px solid rgba(29, 38, 33, 0.12)' }}
           />
         </div>
       </div>

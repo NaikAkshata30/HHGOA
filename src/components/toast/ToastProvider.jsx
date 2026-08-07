@@ -91,7 +91,7 @@ export function ToastProvider({ children }) {
                 className={`pointer-events-auto flex items-start gap-3 rounded-2xl border bg-card/95 p-4 shadow-panel backdrop-blur ${config.accent}`}
               >
                 <Icon size={18} className="mt-0.5 shrink-0" />
-                <p className="text-sm font-medium leading-snug text-coal">{item.message}</p>
+                <p className="whitespace-pre-line text-sm font-medium leading-snug text-coal">{item.message}</p>
               </motion.div>
             )
           })}

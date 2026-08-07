@@ -6,6 +6,27 @@ const toNumber = (value, fallback) => {
 }
 
 /**
+ * Converts a `#RRGGBB` (or 3-digit `#RGB`) hex color into an `rgba()` string.
+ * html2canvas resolves `rgba()` reliably, whereas shorthand 8-digit alpha hex
+ * (`#RRGGBBAA`) can be misread — so translucent fills are always expressed as
+ * explicit rgba() values for pixel-identical exports.
+ */
+export function hexToRgba(hex, alpha = 1) {
+  let h = String(hex || '').replace('#', '').trim()
+  if (h.length === 3) {
+    h = h.split('').map((c) => c + c).join('')
+  }
+  const parsed = Number.parseInt(h, 16)
+  if (h.length !== 6 || Number.isNaN(parsed)) {
+    return `rgba(194, 59, 46, ${alpha})`
+  }
+  const r = (parsed >> 16) & 255
+  const g = (parsed >> 8) & 255
+  const b = parsed & 255
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/**
  * Outline palm frond used as tropical decoration. Generates a midrib plus
  * alternating leaflets so it reads as a stylized frond. Color comes from
  * `currentColor`, so set it via className/style on the caller.
@@ -314,9 +335,14 @@ export const WaveRule = memo(function WaveRule({ className = '', style, flip = f
 })
 
 /**
- * Rubber-ink travel stamp: double circle (dashed inner ring) with centered mono
- * text. Built from plain divs so it rasterizes reliably in html2canvas. Color
- * and lines are props; rotate via the `rotate` prop (degrees).
+ * Rubber-ink travel stamp: double circle (solid inner ring + dashed outer ring)
+ * with centered mono text. Built from plain, positioned divs so it rasterizes
+ * reliably in html2canvas. Color and lines are props; rotate via `rotate`.
+ *
+ * NOTE: the inner ring is a child border div (not `box-shadow: inset …`).
+ * html2canvas paints an inset box-shadow as a full solid disk over the element,
+ * which would turn the whole stamp solid red. A real child border keeps the
+ * on-page look while exporting pixel-identically.
  */
 export const TravelStamp = memo(function TravelStamp({
   className = '',
@@ -333,12 +359,12 @@ export const TravelStamp = memo(function TravelStamp({
       className={className}
       style={{
         ...style,
+        position: 'relative',
         width: size,
         height: size,
         borderRadius: '50%',
         border: `2.5px solid ${color}`,
-        boxShadow: `inset 0 0 0 1.5px ${color}`,
-        background: `${color}12`,
+        background: hexToRgba(color, 0.07),
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -350,6 +376,14 @@ export const TravelStamp = memo(function TravelStamp({
         transform: rotate ? `rotate(${rotate}deg)` : undefined,
       }}
     >
+      <div
+        style={{
+          position: 'absolute',
+          inset: 2.5,
+          borderRadius: '50%',
+          border: `1.5px solid ${color}`,
+        }}
+      />
       <div
         style={{
           position: 'absolute',
@@ -381,9 +415,14 @@ export const TravelStamp = memo(function TravelStamp({
 })
 
 /**
- * Stylized QR placeholder — a deterministic 9x9 matrix with classic finder
- * patterns, seeded from a number so each identity gets its own pattern. SVG
- * rects only, export-safe. Color via the `color` prop.
+ * Decorative, non-functional placeholder QR pattern (seeded, random). NOT a
+ * real QR — it encodes nothing and can never be scanned. Superseded by the real
+ * `BuilderQR` component; kept only as visual dressing / fallback.
+ *
+ * `shape-rendering="crispEdges"` keeps every module a sharp, axis-aligned
+ * block (nearest-neighbour style) — no anti-aliasing bleeding between
+ * neighbouring modules — so the exported QR stays scannable even when the
+ * built-in SVG is rasterised by html2canvas.
  */
 export const QRPlaceholder = memo(function QRPlaceholder({
   className = '',
@@ -420,6 +459,7 @@ export const QRPlaceholder = memo(function QRPlaceholder({
           width={cell}
           height={cell}
           fill={color}
+          shapeRendering="crispEdges"
         />,
       )
     }
@@ -430,7 +470,11 @@ export const QRPlaceholder = memo(function QRPlaceholder({
       width={size}
       height={size}
       className={className}
-      style={style}
+      style={{
+        ...style,
+        shapeRendering: 'crispEdges',
+        imageRendering: 'pixelated',
+      }}
       aria-hidden="true"
     >
       {rects}
