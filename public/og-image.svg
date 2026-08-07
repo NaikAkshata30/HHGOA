@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b0f14"/>
+      <stop offset="1" stop-color="#0e1a15"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#137a4f"/>
+      <stop offset="1" stop-color="#1b9a63"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0" r="1">
+      <stop offset="0" stop-color="#1b9a63" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#1b9a63" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g fill="#ffd23f" opacity="0.16">
+    <circle cx="120" cy="140" r="3"/><circle cx="240" cy="140" r="3"/><circle cx="360" cy="140" r="3"/><circle cx="480" cy="140" r="3"/><circle cx="600" cy="140" r="3"/><circle cx="720" cy="140" r="3"/><circle cx="840" cy="140" r="3"/><circle cx="960" cy="140" r="3"/><circle cx="1080" cy="140" r="3"/>
+    <circle cx="60" cy="280" r="3"/><circle cx="180" cy="280" r="3"/><circle cx="300" cy="280" r="3"/><circle cx="420" cy="280" r="3"/><circle cx="540" cy="280" r="3"/><circle cx="660" cy="280" r="3"/><circle cx="780" cy="280" r="3"/><circle cx="900" cy="280" r="3"/><circle cx="1020" cy="280" r="3"/><circle cx="1140" cy="280" r="3"/>
+    <circle cx="120" cy="420" r="3"/><circle cx="240" cy="420" r="3"/><circle cx="360" cy="420" r="3"/><circle cx="480" cy="420" r="3"/><circle cx="720" cy="420" r="3"/><circle cx="840" cy="420" r="3"/><circle cx="960" cy="420" r="3"/><circle cx="1080" cy="420" r="3"/>
+    <circle cx="60" cy="560" r="3"/><circle cx="180" cy="560" r="3"/><circle cx="300" cy="560" r="3"/><circle cx="420" cy="560" r="3"/><circle cx="540" cy="560" r="3"/><circle cx="660" cy="560" r="3"/><circle cx="780" cy="560" r="3"/><circle cx="900" cy="560" r="3"/><circle cx="1020" cy="560" r="3"/><circle cx="1140" cy="560" r="3"/>
+  </g>
+  <g transform="translate(152,124)">
+    <rect width="110" height="110" rx="24" fill="#0b0f14"/>
+    <rect x="2" y="2" width="106" height="106" rx="22" fill="none" stroke="#ffd23f" stroke-opacity="0.35" stroke-width="4"/>
+    <path d="M30 88c9-18 12-30 18-48 3 12 6 18 12 27 4-9 6-15 6-24 9 12 12 24 9 36-3 12-15 18-30 18-5 0-11-2-15-9z" fill="url(#flame)" stroke="#ffd23f" stroke-width="2.5"/>
+  </g>
+  <text x="304" y="175" font-family="Space Grotesk, Arial, sans-serif" font-size="56" font-weight="700" fill="#ffffff" letter-spacing="1">FrameInGoa</text>
+  <text x="304" y="235" font-family="Inter, Arial, sans-serif" font-size="26" fill="#9aa7b3" letter-spacing="2">HACKER HOUSE GOA · 2026 BUILDER IDENTITY</text>
+  <rect x="304" y="300" width="180" height="56" rx="28" fill="#ffd23f"/>
+  <text x="394" y="337" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#0b0f14" text-anchor="middle">Build · Ship · Belong</text>
+  <text x="304" y="470" font-family="JetBrains Mono, monospace" font-size="22" fill="#1b9a63">#FrameInGoa</text>
+  <text x="304" y="506" font-family="JetBrains Mono, monospace" font-size="22" fill="#1b9a63">#HHGoa2026</text>
+</svg>
