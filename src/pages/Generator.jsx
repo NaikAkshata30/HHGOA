@@ -90,7 +90,6 @@ export default function Generator() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-18">
           <div className="grid gap-10 lg:grid-cols-[1.08fr_.92fr] lg:items-center">
             <div>
-              <div className="flex items-center gap-3"><span className="h-px w-10 bg-gold" /><p className="kicker text-gold">Official HH Goa 2026 Identity Builder</p></div>
               <h1 className="mt-6 text-[clamp(3.5rem,8vw,7rem)] font-black leading-[.84] tracking-tight">Frame your<br /><em className="italic text-gold">Goa story.</em></h1>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-cream/75">Upload your photo, tell us what you build, and get a share-ready HH Goa identity in seconds.</p>
               <a href="#studio" className="mt-7 inline-flex min-h-12 items-center gap-3 rounded-full bg-gold px-6 font-mono text-xs font-black uppercase tracking-[.14em] text-forest-deep transition-transform hover:-translate-y-0.5 focus-visible:outline-gold">Start building <span aria-hidden="true">↓</span></a>
@@ -98,7 +97,7 @@ export default function Generator() {
             <div className="relative mx-auto w-full max-w-xl lg:justify-self-end">
               <div className="absolute -inset-3 rotate-2 rounded-[1.8rem] border border-gold/35" />
               <div className="relative overflow-hidden rounded-[1.5rem] border border-cream/15 bg-forest p-3 shadow-float">
-                <img src="/hh-goa-official.png" alt="Hacker House Goa — Goa, India, 28–31 October 2026" className="block w-full rounded-xl" />
+                <img src="/hh-goa-official.png" alt="Hacker House Goa — Goa, India, 28–31 October 2026" className="hero-logo-giggle block w-full rounded-xl" />
                 <div className="mt-3 flex items-center justify-between px-2 pb-1 font-mono text-[9px] uppercase tracking-[.2em] text-cream/55"><span>Goa, India</span><span className="text-gold">Build · Ship · Belong</span><span>Season 01</span></div>
               </div>
               <span className="absolute -bottom-5 -left-4 grid size-16 rotate-[-8deg] place-items-center rounded-full border-2 border-forest-deep bg-rose text-center font-mono text-[8px] font-black uppercase leading-tight tracking-wider text-cream shadow-lg">Made<br />in Goa</span>
