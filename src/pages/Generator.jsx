@@ -1,402 +1,138 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import {
-  AlertTriangle,
-  BadgeCheck,
-  Download,
-  FileImage,
-  IdCard,
-  ImagePlus,
-  Layers,
-  Loader2,
-  ShieldCheck,
-  Users,
-} from 'lucide-react'
-import Stepper from '../components/common/Stepper.jsx'
+import { useMemo, useRef, useState } from 'react'
+import { Download, Frame, IdCard, ImageIcon, Loader2, Pencil, RotateCcw, Sparkles } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../components/common/Button.jsx'
 import { Field, Input, Select } from '../components/common/Field.jsx'
-import { FeatureCard, FeatureCardGrid } from '../components/common/FeatureCard.jsx'
 import ShareButton from '../components/common/ShareButton.jsx'
-import XIcon from '../components/common/XIcon.jsx'
-import { SunArc, WaveLines } from '../components/common/GoaDecor.jsx'
 import UploadArea from '../components/upload/UploadArea.jsx'
 import FrameGenerator from '../components/frame/FrameGenerator.jsx'
 import BuilderCard from '../components/builderCard/BuilderCard.jsx'
 import useImageUpload from '../hooks/useImageUpload.js'
 import { useToast } from '../components/toast/ToastProvider.jsx'
-import { exportAll, exportBuilderCard, exportFrame } from '../utils/exportImage.js'
-import { BUILDER_TITLES, DEFAULT_BUILDER_TITLE } from '../data/builderTitles.js'
+import { exportBuilderCard, exportFrame } from '../utils/exportImage.js'
+import { BUILDER_TITLES, getBuilderPhrase } from '../data/builderTitles.js'
+import { Birds, PalmLeaf, SunArc, WaveLines, WaveRule } from '../components/common/GoaDecor.jsx'
 
-const STEPS = [
-  { id: 'upload', label: 'Upload' },
-  { id: 'frame', label: 'Frame' },
-  { id: 'card', label: 'Builder Card' },
-  { id: 'export', label: 'Export' },
-]
-
-const FEATURES = [
-  {
-    icon: ShieldCheck,
-    accent: 'accent',
-    title: 'Official identity',
-    description: 'A single visual identity for Hacker House Goa 2026 builders.',
-  },
-  {
-    icon: XIcon,
-    accent: 'yellow',
-    title: 'Ready for X',
-    description: 'Framed exactly to share with #FrameInGoa in one tap.',
-  },
-  {
-    icon: Download,
-    accent: 'pink',
-    title: 'HD export',
-    description: 'Crisp, full-resolution PNG exports built for any screen.',
-  },
-  {
-    icon: Users,
-    accent: 'accent',
-    title: 'Community',
-    description: 'One badge, one season — the whole builder community in frame.',
-  },
+const EMPTY = { name: '', role: '', stack: '', tag: 'THE CURIOUS BUILDER', location: '', github: '' }
+const FORMATS = [
+  { id: 'frame', label: 'Profile Frame', note: 'Square · photo-centric', icon: Frame },
+  { id: 'builder', label: 'Builder Pass', note: 'Portrait · editorial', icon: IdCard },
 ]
 
 export default function Generator() {
-  const { file, previewUrl, error, handleDrop, removeImage } = useImageUpload()
-
-  const [name, setName] = useState('')
-  const [stack, setStack] = useState('')
-  const [titleId, setTitleId] = useState(DEFAULT_BUILDER_TITLE.id)
-
+  const { file, previewUrl, error: uploadError, handleDrop, removeImage } = useImageUpload()
+  const [format, setFormat] = useState('builder')
+  const [form, setForm] = useState(EMPTY)
+  const [position, setPosition] = useState({ x: 50, y: 50 })
+  const [generated, setGenerated] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [errors, setErrors] = useState({})
   const frameRef = useRef(null)
   const builderRef = useRef(null)
-  const [exporting, setExporting] = useState(null) // null | 'frame' | 'card' | 'all'
-  const [exportError, setExportError] = useState('')
   const toast = useToast()
+  const title = form.tag
+  const phrase = useMemo(() => getBuilderPhrase(form.role, form.stack), [form.role, form.stack])
+  const update = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
+  const display = { name: form.name || 'Your Name', role: form.role || 'Your Role', stack: form.stack || 'Your Stack', location: form.location, title, phrase, imagePosition: position }
 
-  const titleLabel = BUILDER_TITLES.find((item) => item.id === titleId)?.label ?? 'Builder'
+  function validate() {
+    const next = {}
+    if (!file) next.photo = 'Add a builder photo to continue.'
+    if (!form.name.trim()) next.name = 'Enter the name to print on your identity.'
+    if (!form.role.trim()) next.role = 'Tell us what you build.'
+    if (!form.stack.trim()) next.stack = 'Add your core tools or technologies.'
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
 
-  const canExport = Boolean(previewUrl)
+  async function generate(event) {
+    event.preventDefault()
+    if (!validate()) return toast.error('Complete the highlighted details first.')
+    setGenerating(true)
+    await new Promise((resolve) => setTimeout(resolve, 520))
+    setGenerating(false)
+    setGenerated(true)
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
 
-  const currentStep = file ? 3 : 0
+  async function download() {
+    if (exporting) return
+    setExporting(true)
+    try {
+      if (format === 'frame') await exportFrame(frameRef.current, form.name)
+      else await exportBuilderCard(builderRef.current, form.name)
+      toast.success('Your HH Goa identity has been downloaded.')
+    } catch { toast.error('We could not render the PNG. Please try again.') }
+    finally { setExporting(false) }
+  }
 
-  // Success toast whenever a photo lands (initial upload or replacement).
-  useEffect(() => {
-    if (file) toast.success('Photo added — your previews are ready.')
-  }, [file, toast])
+  function createAnother() {
+    removeImage(); setForm(EMPTY); setPosition({ x: 50, y: 50 }); setErrors({}); setGenerated(false)
+  }
 
-  const runExport = useCallback(
-    async (mode) => {
-      if (!canExport || exporting !== null) return
-      setExportError('')
-      setExporting(mode)
-      try {
-        if (mode === 'frame') {
-          await exportFrame(frameRef.current)
-          toast.success('Profile frame downloaded.')
-        } else if (mode === 'card') {
-          await exportBuilderCard(builderRef.current)
-          toast.success('Builder ID downloaded.')
-        } else {
-          const results = await exportAll({
-            frameNode: frameRef.current,
-            builderNode: builderRef.current,
-          })
-          results.forEach((result) => {
-            if (typeof result === 'string') {
-              toast.success(
-                result === 'frame' ? 'Profile frame downloaded.' : 'Builder ID downloaded.',
-              )
-            }
-          })
-          const failed = results.filter((result) => result && result.error)
-          if (failed.length) {
-            const labels = failed.map((result) =>
-              result.key === 'frame' ? 'Profile frame' : 'Builder card',
-            )
-            setExportError(`${labels.join(' and ')} failed to export. Please try again.`)
-          }
-        }
-      } catch (error) {
-        setExportError(error?.message || 'Export failed. Please try again.')
-      } finally {
-        setExporting(null)
-      }
-    },
-    [canExport, exporting, toast],
+  const preview = previewUrl ? format === 'frame'
+    ? <FrameGenerator ref={frameRef} previewUrl={previewUrl} name={display.name} stack={`${display.role} · ${display.stack}`} title={title} imagePosition={position} />
+    : <BuilderCard ref={builderRef} previewUrl={previewUrl} {...display} />
+    : null
+
+  if (generated) return (
+    <div className="animate-fade-up">
+      <section className="relative overflow-hidden bg-forest-deep text-cream"><SunArc size={280} className="absolute -right-20 -top-28 text-gold opacity-20" /><WaveLines size={420} className="absolute -left-10 bottom-4 text-sea opacity-15" /><div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20"><p className="kicker text-gold">HH Goa Identity Studio · Ready</p><h1 className="mt-5 max-w-4xl text-[clamp(3rem,7vw,6rem)] font-black leading-[.9]">Your Goa identity is ready.</h1><p className="mt-6 max-w-xl text-lg text-cream/70">One builder. One season. One identity worth sharing.</p></div></section>
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-16"><div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]"><section className="rounded-[2rem] border border-sand bg-card p-3 shadow-panel sm:p-7">{preview}</section><aside className="rounded-[2rem] border border-sand bg-card p-6 lg:sticky lg:top-24"><p className="kicker text-rose">{format === 'frame' ? 'Profile Frame' : 'Builder Pass'}</p><h2 className="mt-4 text-3xl font-black">Built. Framed. Yours.</h2><p className="mt-3 text-sm leading-relaxed text-stone">Download the high-resolution PNG or open X with your caption ready.</p><div className="mt-7 grid gap-3"><Button size="lg" onClick={download} disabled={exporting}>{exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}{exporting ? 'Rendering PNG…' : 'Download PNG'}</Button><ShareButton className="w-full" frameRef={format === 'frame' ? frameRef : null} builderRef={format === 'builder' ? builderRef : null} /><Button variant="ghost" onClick={() => setGenerated(false)}><Pencil size={17} />Edit identity</Button><Button variant="secondary" onClick={createAnother}><RotateCcw size={17} />Create another</Button></div><p className="mt-5 text-xs leading-relaxed text-stone">X cannot attach a locally generated image automatically. Attach the downloaded PNG before posting.</p></aside></div></main>
+    </div>
   )
 
   return (
     <div className="animate-fade-up">
-      {/* ---- Hero ---- */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-foam/50"
-        />
-        <SunArc
-          size={300}
-          className="pointer-events-none absolute -right-24 -top-28 text-forest opacity-[0.06]"
-        />
-        <WaveLines
-          size={320}
-          className="pointer-events-none absolute -left-10 bottom-4 text-sea opacity-[0.25]"
-        />
-        <div className="mx-auto max-w-6xl px-4 pb-10 pt-14 sm:px-6 lg:px-8 lg:pt-20">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-3xl"
-          >
-            <p className="kicker flex flex-wrap items-center gap-x-3 gap-y-1 text-forest">
-              <span>Hacker House Goa</span>
-              <span className="text-sand">/</span>
-              <span className="text-stone">The Studio</span>
-              <span className="text-sand">/</span>
-              <span className="text-stone">Season 01</span>
-            </p>
-            <h1 className="mt-6 font-editorial text-[clamp(2.75rem,7vw,5.5rem)] font-black leading-[0.95] tracking-tight text-coal">
-              Make your <em className="italic text-forest">builder pass.</em>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-stone">
-              Upload your photo, generate your official HH Goa profile frame and Builder ID. No
-              login. No signup. Everything renders instantly.
-            </p>
-            <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.22em] text-stone">
-              15.2993° N · 74.1240° E · Arabian Sea — rendered on your device
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
-            className="mt-10"
-          >
-            <Stepper steps={STEPS} current={currentStep} />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ---- Work area ---- */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-          {/* Left column: upload + details */}
-          <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="mb-3 flex items-end justify-between">
-                <h2 className="font-editorial text-xl font-bold text-coal">Your photo</h2>
-                <span className="kicker text-stone">01 · Upload</span>
-              </div>
-              <UploadArea file={file} error={error} handleDrop={handleDrop} removeImage={removeImage} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="panel p-6 sm:p-7"
-            >
-              <div className="mb-6 flex items-end justify-between">
-                <h2 className="font-editorial text-xl font-bold text-coal">Builder details</h2>
-                <span className="kicker text-stone">02 · Identity</span>
-              </div>
-              <div className="space-y-5">
-                <Field label="Name" htmlFor="name">
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Ada Lovelace"
-                  />
-                </Field>
-                <Field label="Stack / Role" htmlFor="stack">
-                  <Input
-                    id="stack"
-                    type="text"
-                    value={stack}
-                    onChange={(event) => setStack(event.target.value)}
-                    placeholder="Full-stack · Solana"
-                  />
-                </Field>
-                <Field label="Builder Title" htmlFor="title">
-                  <Select id="title" value={titleId} onChange={(event) => setTitleId(event.target.value)}>
-                    {BUILDER_TITLES.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              </div>
-              <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-stone">
-                Filled in by you. worn by the community.
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Right column: live previews */}
-          <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="panel p-5 sm:p-7">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex size-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest opacity-60" />
-                    <span className="relative inline-flex size-2 rounded-full bg-forest" />
-                  </span>
-                  <h2 className="font-editorial text-lg font-bold text-coal">Profile frame</h2>
-                </div>
-                <span className="kicker text-stone">Live · 1080²</span>
-              </div>
-              {previewUrl ? (
-                <FrameGenerator
-                  ref={frameRef}
-                  previewUrl={previewUrl}
-                  name={name.trim() || 'Your Name'}
-                  stack={stack.trim() || 'Your stack'}
-                  title={titleLabel}
-                />
-              ) : (
-                <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-sand bg-cream-soft px-6 text-center">
-                  <span className="grid size-12 place-items-center rounded-full border-2 border-dashed border-sand bg-card text-stone">
-                    <ImagePlus size={22} />
-                  </span>
-                  <p className="font-mono text-xs uppercase tracking-widest text-stone">
-                    Upload a photo to preview your frame
-                  </p>
-                </div>
-              )}
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="panel p-5 sm:p-7">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex size-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose opacity-60" />
-                    <span className="relative inline-flex size-2 rounded-full bg-rose" />
-                  </span>
-                  <h2 className="font-editorial text-lg font-bold text-coal">Builder ID</h2>
-                </div>
-                <span className="kicker text-stone">Live · 1080×1350</span>
-              </div>
-              {previewUrl ? (
-                <BuilderCard
-                  ref={builderRef}
-                  previewUrl={previewUrl}
-                  name={name.trim() || 'Your Name'}
-                  stack={stack.trim() || 'Your stack'}
-                  title={titleLabel}
-                />
-              ) : (
-                <div className="flex h-72 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-sand bg-cream-soft px-6 text-center">
-                  <span className="grid size-12 place-items-center rounded-full border-2 border-dashed border-sand bg-card text-stone">
-                    <IdCard size={22} />
-                  </span>
-                  <p className="font-mono text-xs uppercase tracking-widest text-stone">
-                    Upload a photo to preview your Builder ID
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ---- Export ---- */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="panel p-6 sm:p-10"
-        >
-          <div className="mb-2 flex items-end justify-between">
-            <h2 className="font-editorial text-2xl font-bold text-coal">Export your assets</h2>
-            <span className="kicker text-stone">04 · Export</span>
-          </div>
-          <p className="mb-7 max-w-2xl text-sm leading-relaxed text-stone">
-            Download your profile frame and Builder ID as high-quality PNGs — gradients,
-            shadows, rounded corners and typography preserved at full resolution.
-          </p>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Button
-              variant="secondary"
-              disabled={!canExport || exporting !== null}
-              onClick={() => runExport('frame')}
-            >
-              {exporting === 'frame' ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <FileImage size={18} />
-              )}
-              {exporting === 'frame' ? 'Rendering…' : 'Download Frame'}
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={!canExport || exporting !== null}
-              onClick={() => runExport('card')}
-            >
-              {exporting === 'card' ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <BadgeCheck size={18} />
-              )}
-              {exporting === 'card' ? 'Rendering…' : 'Download Builder Card'}
-            </Button>
-            <Button
-              variant="primary"
-              disabled={!canExport || exporting !== null}
-              onClick={() => runExport('all')}
-            >
-              {exporting === 'all' ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Layers size={18} />
-              )}
-              {exporting === 'all' ? 'Rendering both…' : 'Download Both'}
-            </Button>
-          </div>
-
-          <p className="mt-5 font-mono text-[11px] uppercase tracking-widest text-stone">
-            Profile frame 1080×1080 · Builder ID 1080×1350 · PNG
-          </p>
-
-          <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-sand pt-7 sm:flex-row sm:items-center">
+      <section className="relative overflow-hidden bg-forest-deep text-cream">
+        <PalmLeaf size={230} className="absolute -left-16 top-24 text-gold opacity-10" /><PalmLeaf size={190} className="absolute -right-12 bottom-2 rotate-180 text-rose opacity-10" /><Birds size={90} className="absolute right-24 top-20 hidden text-cream opacity-20 lg:block" />
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-18">
+          <div className="grid gap-10 lg:grid-cols-[1.08fr_.92fr] lg:items-center">
             <div>
-              <h3 className="font-editorial text-lg font-bold text-coal">Share to X</h3>
-              <p className="mt-1 max-w-md text-sm leading-relaxed text-stone">
-                Share your Builder ID and Profile Frame together — on phones the native
-                share sheet carries both images plus a prefilled tweet.
-              </p>
+              <div className="flex items-center gap-3"><span className="h-px w-10 bg-gold" /><p className="kicker text-gold">Official HH Goa 2026 Identity Builder</p></div>
+              <h1 className="mt-6 text-[clamp(3.5rem,8vw,7rem)] font-black leading-[.84] tracking-tight">Frame your<br /><em className="italic text-gold">Goa story.</em></h1>
+              <p className="mt-7 max-w-xl text-lg leading-relaxed text-cream/75">Upload your photo, tell us what you build, and get a share-ready HH Goa identity in seconds.</p>
+              <a href="#studio" className="mt-7 inline-flex min-h-12 items-center gap-3 rounded-full bg-gold px-6 font-mono text-xs font-black uppercase tracking-[.14em] text-forest-deep transition-transform hover:-translate-y-0.5 focus-visible:outline-gold">Start building <span aria-hidden="true">↓</span></a>
             </div>
-            <ShareButton
-              className="w-full sm:w-auto"
-              frameRef={frameRef}
-              builderRef={builderRef}
-              disabled={!canExport}
-            />
+            <div className="relative mx-auto w-full max-w-xl lg:justify-self-end">
+              <div className="absolute -inset-3 rotate-2 rounded-[1.8rem] border border-gold/35" />
+              <div className="relative overflow-hidden rounded-[1.5rem] border border-cream/15 bg-forest p-3 shadow-float">
+                <img src="/hh-goa-official.png" alt="Hacker House Goa — Goa, India, 28–31 October 2026" className="block w-full rounded-xl" />
+                <div className="mt-3 flex items-center justify-between px-2 pb-1 font-mono text-[9px] uppercase tracking-[.2em] text-cream/55"><span>Goa, India</span><span className="text-gold">Build · Ship · Belong</span><span>Season 01</span></div>
+              </div>
+              <span className="absolute -bottom-5 -left-4 grid size-16 rotate-[-8deg] place-items-center rounded-full border-2 border-forest-deep bg-rose text-center font-mono text-[8px] font-black uppercase leading-tight tracking-wider text-cream shadow-lg">Made<br />in Goa</span>
+            </div>
           </div>
-
-          {exportError && (
-            <p className="mt-5 flex items-center gap-2 rounded-2xl border border-rose/40 bg-rose/10 px-4 py-3 text-sm font-medium text-rose">
-              <AlertTriangle size={16} />
-              {exportError}
-            </p>
-          )}
-        </motion.div>
+          <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-cream/15 pt-5 font-mono text-[10px] uppercase tracking-[.2em] text-cream/55"><span>Upload</span><span className="text-rose">◆</span><span>Build</span><span className="text-rose">◆</span><span>Frame</span><span className="text-rose">◆</span><span>Share</span><span className="ml-auto hidden text-gold sm:inline">Goa, India · 28—31 Oct 2026</span></div>
+        </div><WaveRule className="text-gold/25" />
       </section>
 
-      {/* ---- Feature cards ---- */}
-      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
-        <FeatureCardGrid>
-          {FEATURES.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
+      <main id="studio" className="scroll-mt-20 bg-cream-soft/45"><form onSubmit={generate} className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-18">
+        <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="kicker text-forest">The Identity Studio</p><h2 className="mt-3 text-4xl font-black sm:text-5xl">Choose your frame.</h2></div><p className="max-w-sm text-sm leading-relaxed text-stone">One photo. Two distinct identities. Your preview updates as you type.</p></div>
+
+        <div className="mb-5 grid grid-cols-2 overflow-hidden rounded-[1.4rem] border border-sand bg-card sm:grid-cols-4">
+          {[['01', 'Upload', 'Choose your portrait'], ['02', 'Build', 'Add your identity'], ['03', 'Frame', 'Watch it update'], ['04', 'Share', 'Export your PNG']].map(([number, label, note], index) => (
+            <div key={label} className={`relative px-4 py-4 sm:px-5 ${index > 0 ? 'sm:border-l sm:border-sand' : ''} ${index > 1 ? 'border-t border-sand sm:border-t-0' : index === 1 ? 'border-l border-sand sm:border-t-0' : ''}`}>
+              <span className="font-mono text-[9px] font-bold tracking-[.2em] text-rose">{number}</span>
+              <p className="mt-1 font-editorial text-lg font-black text-forest-deep">{label}</p>
+              <p className="mt-0.5 text-xs text-stone">{note}</p>
+            </div>
           ))}
-        </FeatureCardGrid>
-      </section>
+        </div>
+
+        <fieldset className="grid gap-3 sm:grid-cols-2" aria-label="Choose identity format"><legend className="sr-only">Identity format</legend>{FORMATS.map(({ id, label, note, icon: Icon }) => <button type="button" key={id} aria-pressed={format === id} onClick={() => setFormat(id)} className={`group flex items-center justify-between rounded-[1.5rem] border p-5 text-left transition-all ${format === id ? 'border-forest bg-forest text-cream shadow-forest' : 'border-sand bg-card text-coal hover:border-forest/50'}`}><span className="flex items-center gap-4"><span className={`grid size-11 place-items-center rounded-xl ${format === id ? 'bg-gold text-forest-deep' : 'bg-cream-soft text-forest'}`}><Icon size={21} /></span><span><span className="block font-editorial text-xl font-black">{label}</span><span className={`mt-1 block font-mono text-[9px] uppercase tracking-[.17em] ${format === id ? 'text-cream/60' : 'text-stone'}`}>{note}</span></span></span><span className={`size-3 rounded-full border-2 ${format === id ? 'border-gold bg-gold' : 'border-sand'}`} /></button>)}</fieldset>
+
+        <div className="mt-7 grid items-start gap-7 lg:grid-cols-[minmax(350px,.8fr)_minmax(0,1.2fr)]">
+          <section className="rounded-[2rem] border border-sand bg-card p-5 shadow-panel sm:p-7"><div><p className="kicker text-rose">01 · Portrait</p><h3 className="mt-2 text-2xl font-black">Drop your builder photo</h3></div><div className="mt-5"><UploadArea file={file} error={uploadError || errors.photo} handleDrop={handleDrop} removeImage={removeImage} /></div>{previewUrl && <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl border border-sand bg-cream-soft p-4"><div className="flex items-center gap-4"><img src={previewUrl} alt="Uploaded photo preview" className="size-16 rounded-xl object-cover ring-2 ring-gold" style={{ objectPosition: `${position.x}% ${position.y}%` }} /><div className="flex-1"><p className="text-sm font-semibold">Position the photo</p><label className="mt-2 block font-mono text-[9px] uppercase tracking-wider text-stone">Horizontal<input aria-label="Horizontal photo position" type="range" min="0" max="100" value={position.x} onChange={(e) => setPosition((p) => ({ ...p, x: +e.target.value }))} className="block w-full accent-forest" /></label><label className="block font-mono text-[9px] uppercase tracking-wider text-stone">Vertical<input aria-label="Vertical photo position" type="range" min="0" max="100" value={position.y} onChange={(e) => setPosition((p) => ({ ...p, y: +e.target.value }))} className="block w-full accent-forest" /></label></div></div></motion.div>}
+            <div className="my-7 border-t border-sand" /><div><p className="kicker text-forest">02 · Identity</p><h3 className="mt-2 text-2xl font-black">What do you build?</h3></div><div className="mt-5 grid gap-5 sm:grid-cols-2"><Field label="Name *" htmlFor="name" error={errors.name}><Input id="name" maxLength={32} value={form.name} onChange={update('name')} /></Field><Field label="Role *" htmlFor="role" error={errors.role}><Input id="role" maxLength={30} value={form.role} onChange={update('role')} /></Field><div className="sm:col-span-2"><Field label="Stack *" htmlFor="stack" hint="Your key tools, separated by dots or commas." error={errors.stack}><Input id="stack" maxLength={64} value={form.stack} onChange={update('stack')} /></Field></div><div className="sm:col-span-2"><Field label="Builder tag" htmlFor="tag" hint="Choose the identity that feels most like you."><Select id="tag" value={form.tag} onChange={update('tag')}>{BUILDER_TITLES.map((item) => <option key={item.label} value={item.label}>{item.label} — {item.bestFor}</option>)}</Select></Field></div><Field label="Location" htmlFor="location" hint="Optional"><Input id="location" maxLength={28} value={form.location} onChange={update('location')} /></Field><Field label="GitHub" htmlFor="github" hint="Optional"><Input id="github" maxLength={60} value={form.github} onChange={update('github')} /></Field></div></section>
+
+          <section className="rounded-[2rem] border border-sand bg-forest-deep p-3 shadow-float sm:p-6 lg:sticky lg:top-24"><div className="mb-4 flex items-center justify-between px-2"><div><p className="kicker text-gold">Live preview</p><p className="mt-1 text-sm text-cream/55">{format === 'frame' ? 'Profile Frame · 1080²' : 'Builder Pass · 1080 × 1350'}</p></div><span className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-cream/50"><span className="size-2 rounded-full bg-emerald-400" />Live</span></div><AnimatePresence mode="wait"><motion.div key={format} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .2 }} className="rounded-[1.5rem] bg-cream/10 p-2 sm:p-4">{preview || <div className="flex aspect-[4/5] flex-col items-center justify-center rounded-[1.3rem] border border-dashed border-cream/20 bg-cream/5 px-8 text-center text-cream"><span className="grid size-16 place-items-center rounded-full bg-gold text-forest-deep"><ImageIcon size={27} /></span><h3 className="mt-6 text-2xl font-black">Your identity starts here.</h3><p className="mt-2 max-w-xs text-sm leading-relaxed text-cream/55">Upload a photo to reveal your live HH Goa preview.</p></div>}</motion.div></AnimatePresence></section>
+        </div>
+        <div className="mt-7 grid gap-3 rounded-[2rem] border border-sand bg-card p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6"><div><p className="font-editorial text-xl font-black">Ready to frame your story?</p><p className="mt-1 text-sm text-stone">No login. Nothing leaves your browser.</p></div><Button type="submit" size="lg" variant="inverted" className="min-h-14 px-8 uppercase tracking-wide" disabled={generating}>{generating ? <Loader2 size={19} className="animate-spin" /> : <Sparkles size={19} />}{generating ? 'Framing your Goa story…' : 'Generate my HH Goa card'}</Button></div>
+      </form></main>
+
+      <section className="border-t border-sand bg-card"><div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"><div className="grid gap-8 md:grid-cols-3"><div><p className="kicker text-forest">Fast</p><h3 className="mt-3 text-2xl font-black">One pass.</h3><p className="mt-2 text-sm leading-relaxed text-stone">Upload, customize, preview, and export without a loading maze.</p></div><div><p className="kicker text-rose">Private</p><h3 className="mt-3 text-2xl font-black">On your device.</h3><p className="mt-2 text-sm leading-relaxed text-stone">Your photo is processed locally and never sent to a server.</p></div><div><p className="kicker text-deep-sea">Share-ready</p><h3 className="mt-3 text-2xl font-black">Real PNG.</h3><p className="mt-2 text-sm leading-relaxed text-stone">High-resolution output with sharp type, clean crops, and #FrameInGoa.</p></div></div></div></section>
     </div>
   )
 }

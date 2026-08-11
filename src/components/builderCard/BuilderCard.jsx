@@ -17,7 +17,7 @@ import BuilderCardCanvas, { BUILDER_CARD, CENTER } from './BuilderCardCanvas.jsx
  *  - className:      optional extra classes
  */
 const BuilderCard = forwardRef(function BuilderCard(
-  { previewUrl, name, stack, title, imagePosition = CENTER, className = '' },
+  { previewUrl, name, role, stack, title, phrase, location, imagePosition = CENTER, className = '' },
   ref,
 ) {
   const { containerRef, scale } = useCanvasScale(BUILDER_CARD.width)
@@ -25,18 +25,21 @@ const BuilderCard = forwardRef(function BuilderCard(
   if (!previewUrl) return null
 
   return (
-    <div ref={containerRef} className={`w-full ${className}`}>
+    <div ref={containerRef} className={`w-full overflow-hidden ${className}`}>
       <div
         className="relative mx-auto animate-fade-in"
-        style={{ height: BUILDER_CARD.height * scale }}
+        style={{ width: BUILDER_CARD.width * scale, height: BUILDER_CARD.height * scale }}
       >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+        <div className="absolute left-0 top-0" style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
           <BuilderCardCanvas
             ref={ref}
             previewUrl={previewUrl}
             name={name}
+            role={role}
             stack={stack}
             title={title}
+            phrase={phrase}
+            location={location}
             imagePosition={imagePosition}
           />
         </div>

@@ -2,7 +2,6 @@ import { forwardRef, memo, useMemo } from 'react'
 import { Flame } from 'lucide-react'
 import { Birds, DotGrid, Grain, SunRays, TravelStamp, buildBuilderId } from './decorations.jsx'
 import {
-  CoastalLandscape,
   CoastBanner,
   CoordinateStamp,
   Frangipani,
@@ -276,11 +275,6 @@ const FrameCanvas = forwardRef(function FrameCanvas(
       </div>
       <div aria-hidden="true" className="absolute" style={{ left: 932, top: 222, zIndex: 4, transform: 'rotate(-12deg)' }}>
         <CoordinateStamp style={{ width: 70, height: 70 }} />
-      </div>
-
-      {/* ---- Zone 3 · LEFT LOWER — one coastal scene ---- */}
-      <div aria-hidden="true" className="absolute" style={{ left: 22, top: 710, zIndex: 3 }}>
-        <CoastalLandscape style={{ width: 208, height: 286 }} />
       </div>
 
       {/* ---- Zone 4 · RIGHT LOWER — hibiscus, palms, foliage cluster ---- */}

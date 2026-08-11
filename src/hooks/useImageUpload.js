@@ -30,7 +30,7 @@ export default function useImageUpload() {
   useEffect(() => releaseUrl, [releaseUrl])
 
   const setImageFile = useCallback(
-    (nextFile) => {
+    async (nextFile) => {
       setError(null)
 
       if (!nextFile) {
@@ -46,11 +46,24 @@ export default function useImageUpload() {
         return
       }
 
+      let displayFile = nextFile
+      if (['image/heic', 'image/heif'].includes(nextFile.type) || /\.hei[cf]$/i.test(nextFile.name)) {
+        try {
+          const { default: heic2any } = await import('heic2any')
+          const converted = await heic2any({ blob: nextFile, toType: 'image/jpeg', quality: 0.92 })
+          const blob = Array.isArray(converted) ? converted[0] : converted
+          displayFile = new File([blob], nextFile.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' })
+        } catch {
+          setError('This HEIC photo could not be converted on this device. Try JPG or PNG instead.')
+          return
+        }
+      }
+
       releaseUrl()
-      const nextUrl = URL.createObjectURL(nextFile)
+      const nextUrl = URL.createObjectURL(displayFile)
       urlRef.current = nextUrl
 
-      setFile(nextFile)
+      setFile(displayFile)
       setPreviewUrl(nextUrl)
     },
     [releaseUrl],

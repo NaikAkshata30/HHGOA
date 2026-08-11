@@ -23,6 +23,8 @@
 // QR modules sharp; supersampled captures are downscaled with high-quality
 // smoothing only when a caller asks for a smaller output.
 
+import { calculateCoverCrop } from './imageUtils.js'
+
 export type ExportSpec = {
   width: number
   height: number
@@ -78,6 +80,18 @@ function loadHtml2canvas(): Promise<typeof import('html2canvas').default> {
  * layout frame (so gradients, shadows and the photo position are settled).
  */
 async function waitForAssets(root: HTMLElement): Promise<void> {
+  if (document.fonts?.load) {
+    try {
+      await Promise.all([
+        document.fonts.load('900 82px Fraunces'),
+        document.fonts.load('700 19px "JetBrains Mono"'),
+        document.fonts.load('700 24px Inter'),
+      ])
+    } catch {
+      /* A failed remote font falls back safely below. */
+    }
+  }
+
   if (document.fonts?.ready) {
     try {
       await document.fonts.ready
@@ -143,6 +157,7 @@ export async function captureCanvasElement(
 
   try {
     await waitForAssets(clone)
+    prepareCoverImages(clone)
     const html2canvas = await loadHtml2canvas()
     return await html2canvas(clone, {
       scale,
@@ -253,13 +268,61 @@ export async function elementToFile(
 }
 
 /** Captures and downloads the profile frame at 2160x2160 PNG (2x). */
-export async function exportFrame(node: HTMLElement | null | undefined): Promise<void> {
-  await exportElement(node, EXPORT_SPECS.frame)
+function namedSpec(spec: ExportSpec, name = ''): ExportSpec {
+  const safe = name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'Builder'
+  return { ...spec, filename: `HH-Goa-2026-${safe}.png` }
+}
+
+/** Replace marked photos with a pre-cropped canvas before DOM capture. */
+function prepareCoverImages(root: HTMLElement): void {
+  const images = Array.from(root.querySelectorAll<HTMLImageElement>('img[data-export-cover="true"]'))
+
+  images.forEach((img) => {
+    const width = Number(img.dataset.exportWidth)
+    const height = Number(img.dataset.exportHeight)
+    if (!img.naturalWidth || !img.naturalHeight || !width || !height) return
+
+    const crop = calculateCoverCrop(
+      img.naturalWidth,
+      img.naturalHeight,
+      width,
+      height,
+      Number(img.dataset.positionX),
+      Number(img.dataset.positionY),
+    )
+    const rasterScale = 2
+    const canvas = document.createElement('canvas')
+    canvas.width = width * rasterScale
+    canvas.height = height * rasterScale
+    canvas.style.width = '100%'
+    canvas.style.height = '100%'
+    canvas.style.display = 'block'
+    const context = canvas.getContext('2d')
+    if (!context) return
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
+    context.drawImage(
+      img,
+      crop.sourceX,
+      crop.sourceY,
+      crop.sourceWidth,
+      crop.sourceHeight,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    )
+    img.replaceWith(canvas)
+  })
+}
+
+export async function exportFrame(node: HTMLElement | null | undefined, name = ''): Promise<void> {
+  await exportElement(node, namedSpec(EXPORT_SPECS.frame, name))
 }
 
 /** Captures and downloads the Builder ID card at 2160x2700 PNG (2x). */
-export async function exportBuilderCard(node: HTMLElement | null | undefined): Promise<void> {
-  await exportElement(node, EXPORT_SPECS.builder)
+export async function exportBuilderCard(node: HTMLElement | null | undefined, name = ''): Promise<void> {
+  await exportElement(node, namedSpec(EXPORT_SPECS.builder, name))
 }
 
 /**

@@ -135,6 +135,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   /* Consistent keyboard focus indicator across every interactive element.
@@ -147,6 +148,7 @@
   body {
     @apply bg-cream font-sans text-coal antialiased;
     min-height: 100dvh;
+    overflow-x: clip;
     background-image: radial-gradient(52rem 34rem at 82% -8%, rgb(47 125 91 / 0.09), transparent 60%),
       radial-gradient(44rem 32rem at -8% 108%, rgb(255 212 59 / 0.14), transparent 55%),
       radial-gradient(40rem 30rem at 106% 88%, rgb(255 45 122 / 0.05), transparent 55%),

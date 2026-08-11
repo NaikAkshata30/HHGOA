@@ -9,17 +9,14 @@ import {
   openXCompose,
 } from '../../utils/shareUtils.js'
 
-// Shown when both images have downloaded and X compose opened successfully.
 const SUCCESS_MESSAGE =
-  'Your Builder ID and Profile Frame have been downloaded. Attach both images to your X post before sharing.'
+  'Your card has been downloaded. Attach the PNG to your X post before sharing.'
 
-// Shown when the X compose window could not be opened (popup blocked) but the
-// images will still download.
 const POPUP_BLOCKED_MESSAGE =
-  "X/Twitter couldn't be opened automatically. Your images will still be downloaded. Please open X/Twitter and attach them manually."
+  "X couldn't be opened automatically. Your card will still download so you can attach it manually."
 
 /**
- * "Share to X" — opens the X compose page IMMEDIATELY (synchronously from the
+ * "Share to X" opens the X compose page immediately from the
  * click gesture) with the existing pre-filled share text, then generates and
  * downloads the Profile Frame + Builder ID PNGs and shows an instruction toast.
  *
@@ -47,7 +44,7 @@ export default function ShareButton({
     setSharing(true)
 
     try {
-      // STEP 1 — Open X immediately, synchronously, while this is still a user
+      // Open X immediately, synchronously, while this is still a user
       // gesture. Nothing async is waited on here.
       const compose = openXCompose({ text: buildTweetText() })
 
@@ -59,13 +56,13 @@ export default function ShareButton({
       // only affects image generation (X is already open).
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
 
-      // STEP 3 — Generate + download both images AFTER X has been opened.
+      // Generate and download the selected image after X has opened.
       await generateAndDownloadAssets({
         frameNode: frameRef?.current ?? null,
         builderNode: builderRef?.current ?? null,
       })
 
-      // Downloads triggered → success instruction. X stays open.
+      // Download triggered; X stays open.
       if (compose.opened) {
         toast.success(SUCCESS_MESSAGE)
       }

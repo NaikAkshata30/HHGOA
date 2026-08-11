@@ -25,9 +25,9 @@ const FrameGenerator = forwardRef(function FrameGenerator(
   if (!previewUrl) return null
 
   return (
-    <div ref={containerRef} className={`w-full ${className}`}>
-      <div className="relative mx-auto animate-fade-in" style={{ height: FRAME_SIZE * scale }}>
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+    <div ref={containerRef} className={`w-full overflow-hidden ${className}`}>
+      <div className="relative mx-auto animate-fade-in" style={{ width: FRAME_SIZE * scale, height: FRAME_SIZE * scale }}>
+        <div className="absolute left-0 top-0" style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
           <FrameCanvas
             ref={ref}
             previewUrl={previewUrl}

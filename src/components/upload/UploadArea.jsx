@@ -93,10 +93,10 @@ export default memo(function UploadArea({ file, error, handleDrop, removeImage, 
               <Upload size={26} strokeWidth={2.2} />
             </span>
             <p className="mt-6 font-editorial text-2xl font-bold tracking-tight text-coal">
-              Drop your photo
+              Drop your builder photo
             </p>
             <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.24em] text-stone">
-              JPG · PNG · WEBP — up to {MAX_FILE_SIZE_LABEL}
+              JPG · PNG · WEBP · HEIC — up to {MAX_FILE_SIZE_LABEL}
             </p>
             <Button
               type="button"
@@ -108,7 +108,7 @@ export default memo(function UploadArea({ file, error, handleDrop, removeImage, 
               }}
             >
               <ImagePlus size={16} />
-              Browse files
+              Click to browse
             </Button>
           </>
         )}
